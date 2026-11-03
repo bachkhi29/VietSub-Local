@@ -1,0 +1,25 @@
+# Local environments, downloaded models and user media
+.venv/
+models/
+output/
+.publish_qa/
+
+# Python and editor artifacts
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.vscode/
+.idea/
+*.log
+*.tmp
+Thumbs.db
+.DS_Store
+
+# Local configuration and old update artifacts
+.env
+.env.*
+!.env.example
+1_CAP_NHAT.bat
+KIEM_TRA.md

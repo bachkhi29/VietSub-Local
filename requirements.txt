@@ -1,0 +1,5 @@
+gradio==6.30.0
+faster-whisper==1.2.1
+ctranslate2==4.6.0
+imageio-ffmpeg==0.6.0
+pillow>=10,<13

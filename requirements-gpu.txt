@@ -1,0 +1,3 @@
+# Windows x64: DLLs for CTranslate2, isolated in this project's .venv.
+nvidia-cublas-cu12==12.4.5.8
+nvidia-cudnn-cu12==9.1.0.70
