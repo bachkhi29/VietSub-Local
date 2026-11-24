@@ -933,6 +933,16 @@ body, .gradio-container {
   min-height: 38px;
   margin-bottom: 8px !important;
 }
+#cc-mode-radio .wrap {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  gap: 6px !important;
+}
+#cc-mode-radio label {
+  padding: 5px 10px !important;
+  white-space: nowrap !important;
+}
 
 #export-studio-row {
   align-items: flex-start !important;
@@ -1148,6 +1158,7 @@ def build_app():
                                 value='Song ngữ',
                                 show_label=False,
                                 container=False,
+                                elem_id='cc-mode-radio',
                             )
                             show = gr.Button('Cập nhật CC', size='sm', variant='secondary')
                         preview = gr.Video(
@@ -1175,6 +1186,7 @@ def build_app():
                             type='array',
                             interactive=True,
                             column_count=(5, 'fixed'),
+                            column_widths=['44px', '104px', '104px', '36%', '38%'],
                             max_height=440,
                             wrap=True,
                         )
@@ -1356,6 +1368,7 @@ def build_app():
                                     type='array',
                                     interactive=True,
                                     column_count=(5, 'fixed'),
+                                    column_widths=['44px', '100px', '100px', '36%', '38%'],
                                     max_height=430,
                                     wrap=True,
                                 )
@@ -1372,7 +1385,7 @@ def build_app():
                                 scale=2,
                             )
 
-                        with gr.Tabs(selected='frame_tab') as preview_tabs:
+                        with gr.Tabs(selected='frame_tab', overflow_behavior='wrap') as preview_tabs:
                             with gr.Tab('Ảnh khung hình (tự cập nhật)', id='frame_tab'):
                                 live_preview = gr.Image(
                                     label='Khung đối chiếu tức thì',
@@ -1383,7 +1396,7 @@ def build_app():
                                     buttons=['fullscreen'],
                                     elem_id='live-preview',
                                 )
-                            with gr.Tab('Phát video đã dựng (Xem trước khi tải)', id='video_tab'):
+                            with gr.Tab('Phát video đã dựng', id='video_tab'):
                                 rendered_preview = gr.Video(
                                     label='Xem trực tiếp video đã gắn phụ đề',
                                     show_label=False,

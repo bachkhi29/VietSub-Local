@@ -1,10 +1,23 @@
 # LocalBachSub
 
 <p align="center">
-  <img src="assets/logo.png" alt="LocalBachSub Logo" width="180" />
+  <img src="assets/logo.png" alt="LocalBachSub Logo" width="170" />
 </p>
 
 Công cụ chạy cục bộ trên Windows để **nhận diện lời nói trong video, dịch phụ đề theo ngữ cảnh tự nhiên, chỉnh sửa đối chiếu ngang hàng với video và xuất MP4 có phụ đề**. Giao diện tối giản hỗ trợ chế độ Sáng / Tối, tối ưu cho cả video dọc TikTok / Reels / Shorts lẫn video ngang YouTube.
+
+## Giao diện LocalBachSub 2.0
+
+### 1. Thiết kế phụ đề trực quan & Xem video trước khi tải (Light Mode)
+![Giao diện thiết kế phụ đề và xuất MP4 của LocalBachSub](docs/images/localbachsub-thiet-ke.png)
+
+### 2. Biên tập phụ đề song song ngang hàng với Video đối chiếu
+![Giao diện biên tập đối chiếu ngang hàng của LocalBachSub](docs/images/localbachsub-bien-tap.png)
+
+### 3. Chế độ giao diện Tối (Dark Mode)
+![Giao diện Dark Mode của LocalBachSub](docs/images/localbachsub-darkmode.png)
+
+*Ảnh chụp giao diện thực tế với dữ liệu phụ đề minh họa, không sử dụng video hay dữ liệu cá nhân.*
 
 ## Tính năng chính
 
