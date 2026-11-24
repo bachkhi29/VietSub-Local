@@ -84,7 +84,7 @@ class RenderTests(unittest.TestCase):
             self.assertIn('Audio: aac', info)
             self.assertIn('1280x720', info)
 
-    def test_single_frame_preview_uses_export_layout_and_delay(self):
+    def test_single_frame_preview_uses_tiktok_compact_middle_and_shadow(self):
         import imageio_ffmpeg
 
         ffmpeg = imageio_ffmpeg.get_ffmpeg_exe()
@@ -94,17 +94,54 @@ class RenderTests(unittest.TestCase):
                             '-i', 'color=gray:s=640x360:r=12:d=1', '-c:v', 'libx264',
                             str(source)], check=True, capture_output=True)
             project = core.new_project('sample.mp4', [dict(
-                start=.1, end=.9, source='Hello', vi='Xin chào')])
+                start=.1, end=.9, source='When you wake up in the morning', vi='Khi bạn thức dậy vào buổi sáng')])
             project['subtitle_delay'] = .2
-            frame = Path(render_video(project, source, mode='vi', aspect='9:16',
-                                      resolution='720p', frame_only=True,
-                                      sample_start=.5, backdrop=True,
-                                      backdrop_style='panel'))
+            frame = Path(render_video(
+                project, source, mode='dual', aspect='9:16',
+                resolution='720p', frame_only=True,
+                sample_start=.5, backdrop=True,
+                backdrop_style='panel', position='middle',
+                text_width=70, max_chars=24, max_lines=2,
+                box_padding=10, outline_color='#09090B', shadow=1.5,
+            ))
             self.assertEqual(frame.suffix, '.png')
             self.assertGreater(frame.stat().st_size, 1000)
             info = subprocess.run([ffmpeg, '-hide_banner', '-i', str(frame)],
                                   capture_output=True, text=True).stderr
             self.assertIn('720x1280', info)
+
+    def test_portrait_original_aspect_panel_and_lines_backdrop_colors(self):
+        import imageio_ffmpeg
+        from PIL import Image
+
+        ffmpeg = imageio_ffmpeg.get_ffmpeg_exe()
+        with tempfile.TemporaryDirectory() as temp, patch.object(core, 'OUTPUT', Path(temp)):
+            # Portrait 720x1280 source with aspect='original' (the exact case that broke previously)
+            source = Path(temp) / 'portrait.mp4'
+            subprocess.run([ffmpeg, '-y', '-loglevel', 'error', '-f', 'lavfi',
+                            '-i', 'color=black:s=720x1280:r=12:d=1', '-c:v', 'libx264',
+                            str(source)], check=True, capture_output=True)
+            project = core.new_project('portrait.mp4', [dict(
+                start=0, end=1, source="There's two times", vi='Có hai thời điểm cánh cửa')])
+            for style in ('panel', 'lines'):
+                with self.subTest(backdrop_style=style):
+                    frame = Path(render_video(
+                        project, source, mode='dual', font='Arial Narrow', size=44,
+                        color='#111111', secondary_color='#FFFFFF',
+                        backdrop=True, backdrop_style=style,
+                        backdrop_color='#FFD800', backdrop_opacity=100,
+                        backdrop_radius=22, backdrop_scope='translation',
+                        outline=0, aspect='original', frame_only=True, sample_start=0.4,
+                    ))
+                    img = Image.open(frame).convert('RGB')
+                    self.assertEqual(img.size, (720, 1280))
+                    # Verify wide yellow box spans across the portrait frame (not 31% width)
+                    xs = [
+                        x for y in range(900, 1270) for x in range(720)
+                        if img.getpixel((x, y))[0] > 200 and img.getpixel((x, y))[1] > 180 and img.getpixel((x, y))[2] < 50
+                    ]
+                    self.assertGreater(len(xs), 1500)
+                    self.assertGreater(max(xs) - min(xs), 340)
 
 
 if __name__ == '__main__':

@@ -1,8 +1,8 @@
 @echo off
 setlocal
 cd /d "%~dp0"
-title VietSub Local - Cai dat
-echo VietSub Local - Cai dat lan dau. Can Internet va vai GB dung luong.
+title LocalBachSub - Cai dat
+echo LocalBachSub - Cai dat lan dau. Can Internet va vai GB dung luong.
 echo Khong can quyen Administrator.
 echo.
 if exist ".venv\Scripts\python.exe" goto dependencies

@@ -13,8 +13,10 @@ class SubtitleTests(unittest.TestCase):
         self.tmp = tempfile.TemporaryDirectory()
         self.patch = patch.object(core, 'OUTPUT', Path(self.tmp.name))
         self.patch.start()
-        self.rows = [dict(start=0.2, end=2.1, source="Don't give up.", vi='Đừng bỏ cuộc.'),
-                     dict(start=2.2, end=4.9, source='Keep going.', vi='Hãy tiếp tục.')]
+        self.rows = [
+            dict(start=0.2, end=2.1, source="Don't give up.", vi='Đừng bỏ cuộc.'),
+            dict(start=2.2, end=4.9, source='Keep going.', vi='Hãy tiếp tục.'),
+        ]
 
     def tearDown(self):
         self.patch.stop()
@@ -29,6 +31,47 @@ class SubtitleTests(unittest.TestCase):
         data = '\ufeff1\r\n00:00:00,200 --> 00:00:02,100\r\nHello\r\nworld.\r\n'
         rows = core.parse_srt(data)
         self.assertEqual(rows[0]['source'], 'Hello world.')
+        self.assertEqual(rows[0]['vi'], '')
+
+    def test_bilingual_srt_auto_detects_both_line_orders(self):
+        vi_top = (
+            '1\n00:00:00,200 --> 00:00:02,100\n'
+            'Có hai thời điểm cánh cửa tiềm thức mở ra.\n'
+            "There's two times when the door to the subconscious mind opens up.\n\n"
+            '2\n00:00:02,200 --> 00:00:04,000\n'
+            'Khi bạn thức dậy vào buổi sáng.\n'
+            'When you wake up in the morning.\n'
+        )
+        rows_vi_top = core.parse_srt(vi_top, mode='auto', source_lang='en', target_lang='vi')
+        self.assertEqual(rows_vi_top[0]['source'], "There's two times when the door to the subconscious mind opens up.")
+        self.assertEqual(rows_vi_top[0]['vi'], 'Có hai thời điểm cánh cửa tiềm thức mở ra.')
+        self.assertEqual(rows_vi_top[1]['vi'], 'Khi bạn thức dậy vào buổi sáng.')
+
+        en_top = (
+            '1\n00:00:00,200 --> 00:00:02,100\n'
+            '{\\an8}When you wake up in the morning,\n'
+            'Khi bạn thức dậy vào buổi sáng,\n\n'
+            '2\n00:00:02,200 --> 00:00:03,000\n'
+            'Okay.\n'
+            'Okay.\n'
+        )
+        rows_en_top = core.parse_srt(en_top, mode='auto', source_lang='en', target_lang='vi')
+        self.assertEqual(rows_en_top[0]['source'], 'When you wake up in the morning,')
+        self.assertEqual(rows_en_top[0]['vi'], 'Khi bạn thức dậy vào buổi sáng,')
+        self.assertEqual(rows_en_top[1]['source'], 'Okay.')
+        self.assertEqual(rows_en_top[1]['vi'], 'Okay.')
+
+    def test_compact_segments_merges_orphans_and_splits_long_cues(self):
+        messy = [
+            dict(start=0.0, end=3.8,
+                 source='And what separates the conscious mind from the subconscious mind is the analytical',
+                 vi=''),
+            dict(start=3.8, end=4.2, source='mind.', vi=''),
+        ]
+        cleaned = core.compact_segments(messy, max_chars=44, max_duration=3.2)
+        self.assertGreaterEqual(len(cleaned), 2)
+        self.assertNotEqual(cleaned[-1]['source'], 'mind.')
+        self.assertTrue(cleaned[-1]['source'].endswith('analytical mind.'))
 
     def test_bad_timing_rejected(self):
         for start, end in [(-1, 1), (1, 1), (float('nan'), 2), (0, float('inf'))]:
@@ -72,6 +115,21 @@ class SubtitleTests(unittest.TestCase):
         self.assertNotIn("Don't give up.", data)
         self.assertIn('Hãy tiếp tục.', data)
 
+    def test_ass_tiktok_compact_middle_shadow_and_dual_order(self):
+        data = core.styled_ass(
+            self.rows[:1], 'dual', font='Segoe UI', size=44,
+            color='#FFFFFF', secondary_color='#FDE68A',
+            backdrop=True, backdrop_style='panel',
+            position='middle', margin=220,
+            text_width=55, max_chars=18, max_lines=1,
+            outline=2, outline_color='#112233', shadow=2.5,
+            italic=True, letter_spacing=-0.5, box_padding=10,
+            dual_gap=14, dual_order='source_first',
+        )
+        self.assertIn('&H00332211&', data)
+        self.assertIn(',-1,-1,0,0,100,100,-0.5,0,1,2,2.5,5,', data)
+        self.assertLess(data.index("Don't give up."), data.index('Đừng bỏ cuộc.'))
+
     def test_ass_escapes_model_sequences(self):
         row = dict(start=0, end=2, source='Hey', vi=r'{\pos(0,0)} Xin')
         data = core.styled_ass([row], mode='vi')
@@ -111,17 +169,18 @@ class SubtitleTests(unittest.TestCase):
         self.assertIn(r'\p1', data)
         self.assertIn('Dialogue: 1,', data)
 
-    def test_yellow_rounded_panel_and_added_fonts(self):
-        for font in ('Arial Narrow', 'Bahnschrift',
-                     'Times New Roman', 'Comic Sans MS'):
+    def test_yellow_rounded_panel_and_unboxed_secondary_legibility(self):
+        for font in ('Arial Narrow', 'Bahnschrift', 'Times New Roman', 'Consolas'):
             with self.subTest(font=font):
-                self.assertGreater(core.measure_font(font, 32, True).getlength('Tiếng Việt'), 0)
+                self.assertGreater(core.glyph_width(font, 32, True, 'Tiếng Việt'), 0)
         data = core.styled_ass(self.rows[:1], 'dual', font='Arial Narrow',
                                color='#111111', secondary_color='#FFFFFF',
                                backdrop=True, backdrop_style='panel',
                                backdrop_color='#FFD800', backdrop_opacity=100,
-                               backdrop_radius=28, backdrop_scope='translation')
+                               backdrop_radius=28, backdrop_scope='translation',
+                               outline=0)
         self.assertIn(r'\1c&H00D8FF&\1a&H00&', data)
+        self.assertIn(r'\bord2\3c&H141414&\3a&H00&\4c&H0D0D0D&\4a&H66&\shad1', data)
         self.assertIn(' b ', data)
         self.assertIn('Style: Default,Arial Narrow', data)
 
@@ -162,17 +221,25 @@ class SubtitleTests(unittest.TestCase):
         self.assertEqual(updated[0]['vi'], '')
         self.assertEqual(updated[1]['vi'], 'Hãy tiếp tục.')
 
-    def test_translation_resume_and_preserve_ids(self):
-        p = core.new_project('demo.mp4', self.rows)
-        p['segments'][1]['vi'] = ''
-        seen = []
+    def test_translation_resume_preserve_ids_and_upcoming_context(self):
+        rows = [
+            dict(start=0, end=1, source='First part of', vi='Phần đầu của'),
+            dict(start=1, end=2, source='a connected sentence', vi=''),
+            dict(start=2, end=3, source='that finishes smoothly.', vi='kết thúc mượt mà.'),
+        ]
+        p = core.new_project('demo.mp4', rows)
+        captured_payloads = []
+
         def fake(endpoint, payload):
-            items = json.loads(payload['messages'][-1]['content'])['items']
-            seen.extend(x['id'] for x in items)
-            return {'message': {'content': json.dumps({'translations': [{'id': 2, 'vi': 'Tiếp tục.'}]})}}
-        core.translate_project(p, request=fake)
-        self.assertEqual(seen, [2])
-        self.assertEqual(core.load_project(p['job'])['segments'][1]['vi'], 'Tiếp tục.')
+            user_data = json.loads(payload['messages'][-1]['content'])
+            captured_payloads.append(user_data)
+            return {'message': {'content': json.dumps({'translations': [{'id': 2, 'vi': 'một câu liên kết'}]})}}
+
+        core.translate_project(p, request=fake, style='inspirational')
+        self.assertEqual([x['id'] for x in captured_payloads[0]['items']], [2])
+        self.assertEqual(captured_payloads[0]['previous_context'][0]['vi'], 'Phần đầu của')
+        self.assertEqual(captured_payloads[0]['upcoming_context'][0]['text'], 'that finishes smoothly.')
+        self.assertEqual(core.load_project(p['job'])['segments'][1]['vi'], 'một câu liên kết')
 
     def test_wrong_ids_rejected(self):
         p = core.new_project('demo', self.rows)
@@ -181,18 +248,20 @@ class SubtitleTests(unittest.TestCase):
             core.translate_batch(p['segments'][:1], [], request=fake)
 
     def test_partial_progress_saved_on_api_failure(self):
-        rows = [dict(start=i, end=i+.9, source=f'Line {i}', vi='') for i in range(8)]
+        rows = [dict(start=i, end=i+.9, source=f'Line {i}', vi='') for i in range(14)]
         p = core.new_project('long', rows)
+
         def fake(endpoint, payload):
             items = json.loads(payload['messages'][-1]['content'])['items']
-            if items[0]['id'] > 6:
+            if items[0]['id'] > 10:
                 raise RuntimeError('Disconnected')
             return {'message': {'content': json.dumps({'translations': [
                 {'id': x['id'], 'vi': 'Dòng dịch'} for x in items]})}}
+
         with self.assertRaises(RuntimeError):
             core.translate_project(p, request=fake)
         saved = core.load_project(p['job'])
-        self.assertEqual(sum(bool(s['vi']) for s in saved['segments']), 6)
+        self.assertEqual(sum(bool(s['vi']) for s in saved['segments']), 10)
 
 
 if __name__ == '__main__':

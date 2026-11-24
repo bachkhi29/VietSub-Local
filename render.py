@@ -41,7 +41,10 @@ def render_video(project, media, mode='dual', font='Arial', size=46,
                  auto_fit=True, max_lines=3, min_size=22, source_scale=74,
                  backdrop_style='lines', frame_only=False,
                  backdrop_color='#000000', backdrop_opacity=70,
-                 backdrop_radius=12, backdrop_scope='all'):
+                 backdrop_radius=12, backdrop_scope='all',
+                 outline_color='#171717', shadow=0.0, italic=False,
+                 letter_spacing=0.0, box_padding=16, dual_gap=6,
+                 dual_order='translation_first'):
     source = Path(media or '').resolve()
     if not source.is_file():
         raise ValueError('Chọn lại video gốc ở ô Video trước khi xuất MP4.')
@@ -54,14 +57,19 @@ def render_video(project, media, mode='dual', font='Arial', size=46,
     if frame_fill not in ('fit', 'crop'):
         raise ValueError('Cách lấp đầy khung không hợp lệ.')
     if not frame_only and mode != 'source' and not all(s['vi'].strip() for s in project['segments']):
-        raise ValueError('Còn câu chưa dịch. Dịch đủ các câu trước khi xuất bản Việt/song ngữ.')
+        raise ValueError('Còn câu chưa dịch. Dịch đủ các câu trước khi xuất bản dịch/song ngữ.')
     start = parse_time(sample_start) if sample or frame_only else 0
     duration = .2 if frame_only else 30 if sample else None
+    src_w, src_h = video_size(source)
     if aspect == 'original':
-        vf = ('scale=-2:720,' if resolution == '720p' else '') + 'ass=overlay.ass'
-        script_width = 1920
+        if resolution == '720p':
+            scale_expr = 'scale=720:-2,' if src_w < src_h else 'scale=-2:720,'
+        else:
+            scale_expr = ''
+        vf = scale_expr + 'setsar=1,ass=overlay.ass'
+        script_width = max(300, min(3000, round(1080 * src_w / max(1, src_h))))
     else:
-        dimensions = frame_size(video_size(source) if resolution == 'Gốc' else (720, 720),
+        dimensions = frame_size((src_w, src_h) if resolution == 'Gốc' else (720, 720),
                                 aspect, resolution)
         width, height = dimensions
         scale_mode = 'decrease' if frame_fill == 'fit' else 'increase'
@@ -73,20 +81,29 @@ def render_video(project, media, mode='dual', font='Arial', size=46,
             framing += f'crop={width}:{height},'
         vf = framing + 'setsar=1,ass=overlay.ass'
         script_width = round(1080 * width / height)
-    ass = styled_ass(project['segments'], mode, font, size, color, backdrop,
-                     position, margin, clip_start=start, clip_duration=duration,
-                     secondary_color=secondary_color, uppercase=uppercase,
-                     bold=bold, outline=outline, max_chars=max_chars,
-                     script_width=script_width, text_align=text_align,
-                     text_width=text_width, wrap_mode=wrap_mode,
-                     auto_fit=auto_fit, max_lines=max_lines,
-                     min_size=min_size, source_scale=source_scale,
-                     backdrop_style=backdrop_style,
-                     backdrop_color=backdrop_color,
-                     backdrop_opacity=backdrop_opacity,
-                     backdrop_radius=backdrop_radius,
-                     backdrop_scope=backdrop_scope,
-                     delay=project.get('subtitle_delay', 0))
+    ass = styled_ass(
+        project['segments'], mode, font, size, color, backdrop,
+        position, margin, clip_start=start, clip_duration=duration,
+        secondary_color=secondary_color, uppercase=uppercase,
+        bold=bold, outline=outline, max_chars=max_chars,
+        script_width=script_width, text_align=text_align,
+        text_width=text_width, wrap_mode=wrap_mode,
+        auto_fit=auto_fit, max_lines=max_lines,
+        min_size=min_size, source_scale=source_scale,
+        backdrop_style=backdrop_style,
+        backdrop_color=backdrop_color,
+        backdrop_opacity=backdrop_opacity,
+        backdrop_radius=backdrop_radius,
+        backdrop_scope=backdrop_scope,
+        outline_color=outline_color,
+        shadow=shadow,
+        italic=italic,
+        letter_spacing=letter_spacing,
+        box_padding=box_padding,
+        dual_gap=dual_gap,
+        dual_order=dual_order,
+        delay=project.get('subtitle_delay', 0),
+    )
     if not frame_only and 'Dialogue: ' not in ass:
         raise ValueError('Không có phụ đề ở mốc thử này. Chọn mốc khác.')
     if frame_only:
@@ -132,7 +149,6 @@ def render_video(project, media, mode='dual', font='Arial', size=46,
             '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '20',
             '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '160k',
             '-movflags', '+faststart', '-progress', 'pipe:1', '-nostats', str(partial)]
-    # The temporary name needs an explicit container; its suffix is .mp4.
     errors = []
     try:
         proc = subprocess.Popen(cmd, cwd=directory, stdout=subprocess.PIPE,
@@ -149,8 +165,8 @@ def render_video(project, media, mode='dual', font='Arial', size=46,
                     if re.fullmatch(r'\d+:\d+:\d+\.\d+', value):
                         h, m, s = value.split(':')
                         progress(min(.95, (int(h)*3600 + int(m)*60 + float(s))/estimated_duration),
-                                 desc=('Đang tạo video mẫu…' if sample else
-                                       'Đang xuất toàn bộ MP4 · tiến độ ước lượng…'))
+                                 desc=('Đang dựng video thử 30 giây…' if sample else
+                                       'Đang xuất toàn bộ MP4…'))
             code = proc.wait()
         except BaseException:
             proc.kill()
@@ -159,7 +175,7 @@ def render_video(project, media, mode='dual', font='Arial', size=46,
         finally:
             proc.stdout.close()
         if code != 0 or not partial.is_file() or partial.stat().st_size == 0:
-            raise RuntimeError('Không xuất được MP4. Kiểm tra video gốc và chỗ trống ổ đĩa.\n'
+            raise RuntimeError('Không xuất được MP4. Kiểm tra video gốc và dung lượng ổ đĩa.\n'
                                + '\n'.join(errors[-12:])[-1400:])
         partial.rename(output)
         if progress:

@@ -1,68 +1,51 @@
-# VietSub Local
+# LocalBachSub
 
-Công cụ chạy trên Windows để **nhận diện lời nói trong video, dịch phụ đề, chỉnh sửa và xuất video có phụ đề**. Giao diện tiếng Việt; mô hình nhận diện và dịch chạy trên máy sau khi tải về.
+<p align="center">
+  <img src="assets/logo.png" alt="LocalBachSub Logo" width="180" />
+</p>
 
-![Giao diện xuất video của VietSub Local](docs/images/giao-dien-vietsub-local.png)
+Công cụ chạy cục bộ trên Windows để **nhận diện lời nói trong video, dịch phụ đề theo ngữ cảnh tự nhiên, chỉnh sửa đối chiếu ngang hàng với video và xuất MP4 có phụ đề**. Giao diện tối giản hỗ trợ chế độ Sáng / Tối, tối ưu cho cả video dọc TikTok / Reels / Shorts lẫn video ngang YouTube.
 
-*Ảnh chụp giao diện với video và phụ đề minh họa, không dùng dữ liệu cá nhân.*
+## Tính năng chính
 
-## Tool làm được gì?
+- **Nhận diện & Nhập phụ đề linh hoạt:** nhận diện giọng nói bằng Whisper (`faster-whisper`) với chế độ ngắt câu gọn chuẩn TikTok, hoặc nhập trực tiếp file `.srt` có sẵn (tự động nhận diện cả **SRT gốc** lẫn **SRT song ngữ**).
+- **Dịch tự nhiên liên kết ngữ cảnh:** dịch cục bộ qua Ollama (`qwen3:4b`) giữa tiếng Việt, Anh, Trung, Nhật, Hàn, Pháp và Tây Ban Nha với cửa sổ ngữ cảnh hai chiều giúp câu chữ mượt mà, tự nhiên, tránh dịch máy móc rời rạc; tự động bật ngầm Ollama nếu đang tắt.
+- **Biên tập đối chiếu ngang hàng:** trình phát video và bảng chỉnh sửa phụ đề nằm song song ngang tầm mắt ở cả bước biên tập lẫn bước thiết kế khung xuất. Có nút **Gom gọn câu TikTok** giúp nối từ lẻ bị cụt và tách câu dài cân đối.
+- **Thiết kế phụ đề chi tiết & Tối ưu TikTok:** 6 bộ màu chọn nhanh, bố cục một chạm cho TikTok `9:16` / `4:5` / `1:1` / `16:9` / khung gốc, hộp nền bo góc ôm khít theo độ rộng chữ thực tế của `libass`, nền rời từng dòng, chỉnh màu viền, đổ bóng, khoảng cách chữ, độ đệm hộp nền, đảo thứ tự dòng song ngữ và đặt chữ vào vùng an toàn TikTok.
+- **Xem trực tiếp video trước khi tải:** bấm **Xem thử 30s** hoặc **Xuất & Xem toàn bộ MP4** để phát kiểm tra chuyển động và âm thanh ngay trên trình duyệt rồi mới bấm tải về máy. Xuất đầy đủ `.srt`, `.vtt`, `.ass`, `.zip` và `.mp4`.
 
-- Nhận diện lời nói bằng Whisper, hoặc nhập SRT có sẵn để bỏ qua bước nhận diện.
-- Dịch giữa các ngôn ngữ được hỗ trợ: Việt, Anh, Trung, Nhật, Hàn, Pháp và Tây Ban Nha. Có thể chọn ngôn ngữ nguồn hoặc để tự nhận diện khi xử lý âm thanh.
-- Sửa câu chữ và thời gian phụ đề trước khi xuất.
-- Xem ngay một khung video khi đổi font, màu, bố cục và độ trễ; dựng thử MP4 30 giây để kiểm tra chuyển động.
-- Xuất SRT, VTT, ASS, ZIP phụ đề và MP4 đã dán chữ. MP4 có thể giữ khung gốc hoặc đổi sang 16:9, 4:3, 1:1, 4:5, 9:16.
+## Cài đặt và chạy
 
-## Cài và chạy
+**Cần có:** Windows 10/11, Python 3.11 hoặc 3.12 bản 64-bit, [Ollama](https://ollama.com/download/windows), Internet trong lần tải thư viện và mô hình đầu tiên. NVIDIA GPU giúp nhận diện nhanh hơn; máy không có GPU rời có thể chọn **CPU** và mô hình **small**.
 
-**Cần có:** Windows 10/11, Python 3.11 hoặc 3.12 bản 64-bit, [Ollama](https://ollama.com/download/windows), Internet trong lần tải thư viện và mô hình đầu tiên. Cần nhiều GB dung lượng trống cho mô hình và video xuất. NVIDIA GPU giúp nhận diện nhanh hơn; máy không có NVIDIA có thể chọn **CPU** và mô hình **small** trong app.
-
-1. Tải mã bằng nút **Code → Download ZIP** trên GitHub rồi giải nén, hoặc dùng Git:
+1. Tải mã nguồn về máy:
 
    ```powershell
    git clone https://github.com/bachkhi29/VietSub-Local.git
    cd VietSub-Local
    ```
 
-2. Cài Python từ [python.org](https://www.python.org/downloads/) và Ollama; mở Ollama.
-3. Chạy `1_CAI_DAT.bat`. Script tạo môi trường Python riêng, cài thư viện và tải mô hình dịch `qwen3:4b`. Mô hình Whisper được tải ở lần nhận diện đầu.
-4. Chạy `2_MO_TOOL.bat`. Giao diện mở ở `http://127.0.0.1:7860`. Giữ cửa sổ Terminal mở trong lúc dùng tool.
+2. Cài Python từ [python.org](https://www.python.org/downloads/) và cài [Ollama](https://ollama.com/download/windows).
+3. Chạy `1_CAI_DAT.bat` một lần để tạo môi trường `.venv`, cài thư viện và tải mô hình dịch `qwen3:4b`.
+4. Chạy `2_MO_TOOL.bat`. Giao diện mở tại `http://127.0.0.1:7860` (tự bật ngầm Ollama nếu cần). Giữ cửa sổ Terminal mở trong lúc sử dụng.
 
-Nếu dùng VS Code: mở thư mục repo, chọn **Terminal → New Terminal**. Trong PowerShell, chạy `.\1_CAI_DAT.bat` một lần; những lần sau chạy `.\2_MO_TOOL.bat`.
+## Quy trình sử dụng trong 2 bước
 
-## Dùng trong 3 bước
+1. **Tab 1 · Dịch & Biên tập đối chiếu:** thả video/âm thanh hoặc file SRT (gốc/song ngữ) vào → bấm **Tạo / Nhập phụ đề**. Khung nạp tự thu gọn để trình phát video và bảng phụ đề nằm ngang hàng. Chọn văn phong dịch rồi bấm **Dịch các câu còn trống**, nhấp đúp ô bất kỳ để sửa hoặc bấm **Gom gọn câu TikTok**.
+2. **Tab 2 · Thiết kế chữ & Xem / Xuất Video:** chọn bộ màu nhanh, tỷ lệ khung hình (`9:16` TikTok, `16:9`, giữ khung gốc...), chỉnh độ gọn khối chữ và vị trí. Khung ảnh bên phải tự cập nhật tức thì; bấm **Xem thử 30s** hoặc **Xuất & Xem toàn bộ MP4** để xem video hoàn chỉnh ngay trên giao diện trước khi bấm **Tải về MP4**.
 
-1. **Video & dịch:** tải video/âm thanh lên, chọn ngôn ngữ nguồn và đích. Nếu có SRT nguồn, tải kèm để không phải nhận diện lại. Bấm tạo phụ đề gốc rồi dịch các câu còn trống.
-2. **Sửa & tải phụ đề:** rà lại câu chữ, mốc thời gian và tải SRT/VTT/ASS/ZIP. Bản dịch AI có thể sai; nên kiểm tra những câu quan trọng.
-3. **Xuất video MP4:** chọn khung hình và cách hiển thị phụ đề. Ô **Bộ màu chọn nhanh** có mẫu **Đen trên nền vàng**; có thể chỉnh màu, font, bố cục và độ trễ. Khung **Xem ngay** tự cập nhật một ảnh tĩnh. Dùng **Dựng thử 30 giây** để kiểm tra âm thanh/chuyển động trước khi xuất toàn bộ.
+## Lưu trữ dữ liệu
 
-Thử nhập `examples/thu_phu_de.en.srt` nếu muốn xem luồng chỉnh sửa mà chưa có video.
+Mọi dự án, phụ đề và video của người dùng nằm trong thư mục `output/<mã công việc>/` trên máy cục bộ và đã được loại trừ trong `.gitignore` (cùng `models/` và `.venv/`). Video gốc không bị ghi đè.
 
-## File được lưu ở đâu?
-
-Mỗi công việc nằm trong `output/<mã công việc>/`. Thư mục này có nội dung và video của người dùng, **không được đưa lên GitHub**. Repo đã có `.gitignore` để loại trừ `output/`, `models/` và `.venv/`.
-
-File phụ đề gồm bản nguồn, bản dịch, song ngữ và ZIP. MP4 mới nằm trong thư mục `renders/` của công việc; video gốc không bị ghi đè. File ASS trong ZIP dùng kiểu mặc định; các tùy chỉnh font/màu ở tab xuất áp dụng cho MP4.
-
-## Giới hạn hiện tại
-
-- Chỉ có launcher và quy trình cài đặt cho Windows.
-- File chỉ có âm thanh tạo được phụ đề nhưng không thể xuất MP4 dán chữ khi không có hình.
-- Ô **Xem ngay** là một khung tĩnh, không thay cho video thử 30 giây.
-- Chưa tách người nói hoặc xử lý hàng loạt video. Chất lượng phụ đề phụ thuộc âm thanh đầu vào và mô hình; cần rà lại trước khi chia sẻ.
-- Tool không yêu cầu API key dịch. Mô hình được tải từ bên ngoài ở lần cài/nhận diện đầu; nội dung dịch được gửi tới Ollama tại `127.0.0.1` trên máy của ông.
-
-## Kiểm tra mã nguồn
+## Kiểm tra tự động
 
 ```powershell
 .\.venv\Scripts\python.exe -m unittest discover -s tests -v
 ```
 
-Các bài test kiểm tra xử lý phụ đề và xuất video bằng FFmpeg. Chúng không thay thế việc xem lại bản dịch của một video thật.
-
-Hướng dẫn cài có hình thức dễ đọc hơn nằm trong [BAT_DAU.html](BAT_DAU.html). Nếu gặp lỗi hoặc muốn đề xuất tính năng, mở **Issue** trên GitHub và mô tả bước tái hiện; tránh đính kèm video/phụ đề riêng tư.
+Hướng dẫn cài đặt nhanh dạng trang web nằm trong [BAT_DAU.html](BAT_DAU.html).
 
 ## Giấy phép
 
-Mã nguồn của dự án dùng [MIT License](LICENSE). Whisper, Ollama, Qwen, FFmpeg và các thư viện khác được tải/cài riêng và tuân theo giấy phép của từng bên.
+Mã nguồn dự án phân phối theo [MIT License](LICENSE). Whisper, Ollama, Qwen, FFmpeg và các thư viện đi kèm tuân theo giấy phép riêng của từng dự án.
